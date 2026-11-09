@@ -12,6 +12,10 @@ is theirs. The original project's README is in [README-JAMULUS.md](README-JAMULU
 - The Windows installer installs into its own folder with its own Start menu and uninstall entries, so it sits beside an
   official Jamulus install and never removes one.
 - The About box credits Jamulus and links this source code.
+- **One install on Windows:** if the PC has no ASIO audio driver, the installer adds
+  [FlexASIO](https://github.com/dechamps/FlexASIO) (free, open source, MIT licence, bundled unchanged) and sets it to its
+  Windows WASAPI backend, instead of stopping at a "you need an ASIO driver" page. Its licence is installed next to the app
+  as FlexASIO-LICENSE.txt and kept in `windows/flexasio/`. Interface makers' own drivers still work and take priority.
 
 The jam engine and network protocol are unchanged: it works with any Jamulus server, Jack's private rooms included.
 Based on Jamulus 3.12.6 (upstream commit b2bf22e0d329a43dd222749737df244b8fc3b16e).

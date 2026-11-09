@@ -126,9 +126,8 @@ BrandingText "${APP_TITLE}. Built on Jamulus."
 ; Display dialog based on BuildOption set
 !if ${BUILD_OPTION} == "jackonwindows"
     Page Custom JACKCheckInstalled ExitJACKInstalled
-!else
-    Page Custom ASIOCheckInstalled ExitASIOInstalled
 !endif
+; Jack's Jam Room: no "you need an ASIO driver" page. If the PC has none, the install step below adds FlexASIO.
 
 !insertmacro MUI_PAGE_LICENSE "${ROOT_PATH}\COPYING"
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE ValidateDestinationFolder
@@ -299,6 +298,30 @@ Var bRunApp
 
 !define UnSelectSection '!insertmacro SecUnSelect'
 
+
+; Jack's Jam Room: one install. Windows needs an ASIO audio driver for the app. If none is installed, install the bundled
+; FlexASIO (free, open source, MIT licence, github.com/dechamps/FlexASIO) silently, and set it to the Windows WASAPI
+; backend (its documented low-delay shared mode) unless the person already has FlexASIO settings of their own.
+; Interface makers' own drivers (Focusrite and others) still work and stay an optional upgrade.
+!macro InstallBundledASIO
+    InitPluginsDir
+    EnumRegKey $0 HKLM "SOFTWARE\ASIO" 0
+    ${If} $0 == ""
+        DetailPrint "No ASIO audio driver found: installing FlexASIO..."
+        SetOutPath "$PLUGINSDIR"
+        File "${ROOT_PATH}\windows\flexasio\FlexASIO-1.10b.exe"
+        ExecWait '"$PLUGINSDIR\FlexASIO-1.10b.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' $1
+        DetailPrint "FlexASIO setup finished (code $1)"
+        IfFileExists "$PROFILE\FlexASIO.toml" +5 0
+            FileOpen  $2 "$PROFILE\FlexASIO.toml" w
+            FileWrite $2 `# Written by the Jack's Jam Room installer: use the Windows WASAPI backend for low delay.$\r$\n`
+            FileWrite $2 `backend = "Windows WASAPI"$\r$\n`
+            FileClose $2
+    ${EndIf}
+    SetOutPath "$INSTDIR"
+    File "/oname=FlexASIO-LICENSE.txt" "${ROOT_PATH}\windows\flexasio\LICENSE.txt"
+!macroend
+
 Section "Install_64Bit" INST_64
     ; check if old, wrongly installed Jamulus exists. See https://stackoverflow.com/questions/27839860/nsis-check-if-registry-key-value-exists#27841158
     IfFileExists "$PROGRAMFILES32\${APP_TITLE}\Uninstall.exe" 0 continueinstall
@@ -354,6 +377,9 @@ Section "Install_64Bit" INST_64
     ; Install the main application
     !insertmacro InstallApplication x86_64
     !insertmacro SetupShortcuts
+    !if ${BUILD_OPTION} != "jackonwindows"
+        !insertmacro InstallBundledASIO
+    !endif
 
     ; Install Microsoft Visual Studio redistributables and remove the installer afterwards
     ExecWait "$\"$INSTDIR\${VC_REDIST64_EXE}$\" /q /norestart"
@@ -365,6 +391,9 @@ Section "Install_32Bit" INST_32
     ; Install the main application
     !insertmacro InstallApplication x86
     !insertmacro SetupShortcuts
+    !if ${BUILD_OPTION} != "jackonwindows"
+        !insertmacro InstallBundledASIO
+    !endif
 
     ; Install Microsoft Visual Studio redistributables and remove the installer afterwards
     ExecWait "$\"$INSTDIR\${VC_REDIST32_EXE}$\" /q /norestart"

@@ -35,6 +35,14 @@ jobs:
             ${{ github.workspace }}\libs\ASIOSDK2
           key: windows-${{ hashFiles('.github/workflows/build-windows.yml', '.github/autobuild/windows.ps1', 'windows/deploy_windows.ps1') }}
 
+      - name: Fetch FlexASIO (the audio driver the installer adds when a PC has none)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force windows\flexasio | Out-Null
+          Invoke-WebRequest -Uri https://github.com/dechamps/FlexASIO/releases/download/flexasio-1.10b/FlexASIO-1.10b.exe -OutFile windows\flexasio\FlexASIO-1.10b.exe
+          $h = (Get-FileHash windows\flexasio\FlexASIO-1.10b.exe -Algorithm SHA256).Hash
+          if ($h -ne 'FE496BCC08D6C421C6244C8A60AC7B538560BDA138000FD1A54AB8EBCE031209') { throw "FlexASIO checksum mismatch: $h" }
+
       - name: Set up build dependencies
         run: powershell .\.github\autobuild\windows.ps1 -Stage setup
 
