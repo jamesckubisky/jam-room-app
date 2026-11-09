@@ -58,16 +58,18 @@
 ; Compile-time definitions
 !define VC_REDIST32_EXE   "vc_redist.x86.exe"
 !define VC_REDIST64_EXE   "vc_redist.x64.exe"
-!define APP_INSTALL_KEY   "Software\${APP_NAME}"
+!define APP_TITLE         "Jack's Jam Room"
+!define APP_ID            "JacksJamRoom"
+!define APP_INSTALL_KEY   "Software\${APP_ID}"
 !define APP_INSTALL_VALUE "InstallFolder"
 !define APP_INSTALL_ICON  "InstallDtIcon"
 !define APP_RUN           "RunAppAfterInstall"
-!define AUTORUN_NAME      "${APP_NAME} Server"
+!define AUTORUN_NAME      "${APP_TITLE} Server"
 !define AUTORUN_KEY       "Software\Microsoft\Windows\CurrentVersion\Run"
 !define APP_EXE           "${APP_NAME}.exe"
 !define UNINSTALL_EXE     "Uninstall.exe"
-!define APP_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_NAME}"
-!define APP_URL           "https://jamulus.io"
+!define APP_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}"
+!define APP_URL           "https://jacksjamroom.com"
 
 !define SF_USELECTED  0
 
@@ -77,10 +79,10 @@ Unicode               true   ; Support all languages via Unicode
 RequestExecutionLevel admin  ; Administrator privileges are required for installation
 
 ; Installer name and file
-Name         "${APP_NAME}"
+Name         "${APP_TITLE}"
 OutFile      "${DEPLOY_PATH}\${APP_NAME}-${APP_VERSION}-installer-win.exe"
-Caption      "${APP_NAME} ${APP_VERSION} Installer"
-BrandingText "${APP_NAME}. Make music online. With friends. For free."
+Caption      "${APP_TITLE} ${APP_VERSION} Installer"
+BrandingText "${APP_TITLE}. Built on Jamulus."
 
  ; Additional plugin location (for nsProcess)
 !addplugindir "${ROOT_PATH}\libs\NSIS"
@@ -259,22 +261,21 @@ Var bRunApp
     WriteRegStr HKLM "${APP_INSTALL_KEY}" "${APP_INSTALL_VALUE}" "$INSTDIR"
 
     ; Add the registry keys so that software appears in Windows "Add/Remove Software"
-    WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "DisplayName"     "${APP_NAME}"
+    WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "DisplayName"     "${APP_TITLE}"
     WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "DisplayIcon"     "$INSTDIR\${APP_EXE},0"
     WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "UninstallString" '"$INSTDIR\${UNINSTALL_EXE}"'
     WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "DisplayVersion"  "${APP_VERSION}"
     WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "HelpLink"        "${APP_URL}"
     WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "URLInfoAbout"    "${APP_URL}"
-    WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "Publisher"       "${APP_NAME}"
+    WriteRegStr HKLM "${APP_UNINSTALL_KEY}" "Publisher"       "${APP_TITLE}"
 
     ; Add the uninstaller
     WriteUninstaller "$INSTDIR\${UNINSTALL_EXE}"
 
     ; Add the Start Menu shortcuts
-    CreateDirectory "$SMPROGRAMS\${APP_NAME}"
-    CreateShortCut  "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk"           "$INSTDIR\${APP_EXE}"
-    CreateShortCut  "$SMPROGRAMS\${APP_NAME}\${APP_NAME} Server.lnk"    "$INSTDIR\${APP_EXE}" "-s" "$INSTDIR\servericon.ico"
-    CreateShortCut  "$SMPROGRAMS\${APP_NAME}\${APP_NAME} Uninstall.lnk" "$INSTDIR\${UNINSTALL_EXE}"
+    CreateDirectory "$SMPROGRAMS\${APP_TITLE}"
+    CreateShortCut  "$SMPROGRAMS\${APP_TITLE}\${APP_TITLE}.lnk"           "$INSTDIR\${APP_EXE}"
+    CreateShortCut  "$SMPROGRAMS\${APP_TITLE}\${APP_TITLE} Uninstall.lnk" "$INSTDIR\${UNINSTALL_EXE}"
 
 !macroend
 
@@ -300,7 +301,7 @@ Var bRunApp
 
 Section "Install_64Bit" INST_64
     ; check if old, wrongly installed Jamulus exists. See https://stackoverflow.com/questions/27839860/nsis-check-if-registry-key-value-exists#27841158
-    IfFileExists "$PROGRAMFILES32\Jamulus\Uninstall.exe" 0 continueinstall
+    IfFileExists "$PROGRAMFILES32\${APP_TITLE}\Uninstall.exe" 0 continueinstall
 
         MessageBox MB_YESNOCANCEL|MB_ICONEXCLAMATION "$(OLD_WRONG_VER_FOUND)" /sd IDYES IDNO idontcare IDCANCEL quit
             goto removeold
@@ -310,7 +311,7 @@ Section "Install_64Bit" INST_64
             goto removeold
 
         removeold: ; Remove it
-            ExecWait '"$PROGRAMFILES32\Jamulus\Uninstall.exe" /S' $0
+            ExecWait '"$PROGRAMFILES32\${APP_TITLE}\Uninstall.exe" /S' $0
             ${IfNot} $0 == 0
                 MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(OLD_VER_REMOVE_FAILED)" /sd IDCANCEL IDOK continueinstall
                 goto quit
@@ -380,7 +381,7 @@ Function .onInit
         ; Set default installation folder, retrieve from registry if available
         ReadRegStr $INSTDIR HKLM "${APP_INSTALL_KEY}" "${APP_INSTALL_VALUE}"
         IfErrors   0 +2
-        StrCpy     $INSTDIR "$PROGRAMFILES64\${APP_NAME}"
+        StrCpy     $INSTDIR "$PROGRAMFILES64\${APP_TITLE}"
 
         ; enable the 64 bit install section
         ${SelectSection} ${INST_64}
@@ -392,7 +393,7 @@ Function .onInit
         ; Set default installation folder, retrieve from registry if available
         ReadRegStr $INSTDIR HKLM "${APP_INSTALL_KEY}" "${APP_INSTALL_VALUE}"
         IfErrors   0 +2
-        StrCpy     $INSTDIR "$PROGRAMFILES32\${APP_NAME}"
+        StrCpy     $INSTDIR "$PROGRAMFILES32\${APP_TITLE}"
 
         ; enable the 32 bit install section
         ${SelectSection} ${INST_32}
@@ -421,7 +422,7 @@ Function ValidateDestinationFolder
 
     ${If} ${FileExists} "$INSTDIR\*"
     ${AndIfNot} ${FileExists} "$INSTDIR\${APP_EXE}"
-        StrCpy $INSTDIR "$INSTDIR\${APP_NAME}"
+        StrCpy $INSTDIR "$INSTDIR\${APP_TITLE}"
         MessageBox MB_OK|MB_ICONEXCLAMATION "$(INVALID_FOLDER_MSG)" /sd IDOK
         Abort
     ${endIf}
@@ -466,7 +467,7 @@ FunctionEnd
 
 Function createdesktopshortcut
    WriteRegStr HKLM "${APP_INSTALL_KEY}" "${APP_INSTALL_ICON}" "1" ; remember that icon should be installed next time
-   CreateShortCut  "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${APP_EXE}"
+   CreateShortCut  "$DESKTOP\${APP_TITLE}.lnk" "$INSTDIR\${APP_EXE}"
 FunctionEnd
 
 ; Define functions for JACK when using the jackonwindows buildoption, else use default ASIO functions
@@ -590,11 +591,11 @@ Section "un.Install"
     ${EndIf}
 
     ; Remove the Start Menu and desktop shortcuts
-    IfFileExists "$DESKTOP\${APP_NAME}.lnk" 0 skipshortcut
-        Delete   "$DESKTOP\${APP_NAME}.lnk"
+    IfFileExists "$DESKTOP\${APP_TITLE}.lnk" 0 skipshortcut
+        Delete   "$DESKTOP\${APP_TITLE}.lnk"
     skipshortcut:
 
-    RMDir /r "$SMPROGRAMS\${APP_NAME}"
+    RMDir /r "$SMPROGRAMS\${APP_TITLE}"
 
     ; There may be an auto run entry in the registry for the server, remove it
     DeleteRegValue HKCU "${AUTORUN_KEY}" "${AUTORUN_NAME}"

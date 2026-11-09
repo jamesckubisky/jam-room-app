@@ -395,6 +395,9 @@ CAboutDlg::CAboutDlg ( QWidget* parent ) : CBaseDlg ( parent )
                              " the audio data from each client, mixes the audio data and sends the mix "
                              " back to each client." ) +
                         "</p>"
+                        "<p><b>Jack's Jam Room</b> is a build of Jamulus by Volker Fischer and the Jamulus contributors, "
+                        "with Jack's Jam Room's name and icon. Source code of this build: "
+                        "https://github.com/jamesckubisky/jam-room-app</p>"
                         "<p><font face=\"courier\">" // license notice (see file headers)
                         "As of Jamulus 3.12.1dev (commit eb172d47): All new source code contributions must be licensed "
                         "under AGPL 3.0 or any later version.<br><br>"
