@@ -1,55 +1,33 @@
-[![Homepage picture](https://github.com/jamulussoftware/jamuluswebsite/blob/release/assets/img/jamulusbannersmall.png)](https://jamulus.io)
+# Jack's Jam Room app
 
-[![Auto-Build](https://github.com/jamulussoftware/jamulus/actions/workflows/autobuild.yml/badge.svg)](https://github.com/jamulussoftware/jamulus/actions/workflows/autobuild.yml)
+The app players use to jam in [Jack's Jam Room](https://jacksjamroom.com) private rooms.
 
-# Jamulus - Internet Jam Session Software
+It is a build of **[Jamulus](https://github.com/jamulussoftware/jamulus)**, the free, open-source program for playing music
+together live over the internet, written by Volker Fischer and the Jamulus contributors. All the credit for the jam engine
+is theirs. The original project's README is in [README-JAMULUS.md](README-JAMULUS.md).
 
-<a href="https://jamulus.io/"><img align="left" width="102" height="102" src="https://jamulus.io/assets/img/jamulus-icon-2020.svg"/></a>
+## What this build changes
+- The name **Jack's Jam Room** in the window title, dialogs and installer, and its own settings folder.
+- Jack's icon for the app, window and installer.
+- The Windows installer installs into its own folder with its own Start menu and uninstall entries, so it sits beside an
+  official Jamulus install and never removes one.
+- The About box credits Jamulus and links this source code.
 
-Jamulus enables musicians to perform in real-time together over the internet.
-A Jamulus server collects the incoming audio data from each Jamulus client, mixes that data and then sends that mix back to each client. Jamulus can support large numbers of clients with minimal latency and modest bandwidth requirements.
+The jam engine and network protocol are unchanged: it works with any Jamulus server, Jack's private rooms included.
+Based on Jamulus 3.12.6 (upstream commit b2bf22e0d329a43dd222749737df244b8fc3b16e).
 
-Jamulus is [**free and open source software**](https://www.gnu.org/philosophy/free-sw.en.html) (FOSS) licensed under the [GPL](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
-and runs under **Windows** ([ASIO](https://www.steinberg.net) or [JACK](https://jackaudio.org)),
-**MacOS** ([Core Audio](https://developer.apple.com/documentation/coreaudio)) and
-**Linux** ([JACK](https://jackaudio.org)).
-It is based on the [Qt framework](https://www.qt.io) and uses the [OPUS](https://www.opus-codec.org/) audio codec.
+## Download
+Windows: the latest installer is on the [Releases](../../releases/latest) page. Mac and Linux players use the official
+Jamulus download from [jamulus.app](https://jamulus.app/).
 
-## Installation
+## Building
+Every push to `main` builds the Windows installer with GitHub Actions (`.github/workflows/build-windows.yml`, using
+Jamulus's own build scripts). A tag starting with `v` also publishes it as a release. See [COMPILING.md](COMPILING.md) to
+build it yourself.
 
-[Please see the Getting Started page](https://jamulus.io/wiki/Getting-Started) containing instructions for installing and using Jamulus for your platform.
+## Licence
+Jamulus is licensed under the GNU Affero General Public License 3.0 or later (code contributed before 3.12.1dev: GPL 3.0 or
+later). This build is distributed under the same terms; see [COPYING](COPYING). The changes listed above are the only
+differences from upstream Jamulus 3.12.6, and their full source is in this repository.
 
-## Help
-
-Official documentation for Jamulus is on the [Jamulus homepage](https://jamulus.io)
-
-See also the [discussion forums](https://github.com/jamulussoftware/jamulus/discussions). If you have issues, feel free to ask for help there.
-
-Bugs and feature requests can be [reported here](https://github.com/jamulussoftware/jamulus/issues)
-
-## Compilation
-
-[Please see these instructions](COMPILING.md)
-
-## Contributing
-
-See the [contributing instructions](CONTRIBUTING.md)
-
-## Acknowledgements
-
-Jamulus contains code from different sources (see also [COPYING](COPYING)). The developers wish
-to thank the maintainers of these projects for making their efforts available to us under their respective licences:
-
-*   Qt cross-platform application framework: [qt.io](https://www.qt.io)
-*   Opus Interactive Audio Codec: [opus-codec.org](https://www.opus-codec.org/)
-*   Audio reverberation code: by Perry R. Cook and Gary P. Scavone, 1995 - 2004
-  (taken from "The Synthesis ToolKit in C++ (STK)"):
-  [ccrma.stanford.edu/software/stk/](https://ccrma.stanford.edu/software/stk/)
-*   Some pixmaps are from the Open Clip Art Library (OCAL): [openclipart.com](https://openclipart.org/)
-*   Country flag icons from Mark James: [famfamfam.com](http://www.famfamfam.com)
-*   [JACK Audio Connection Kit](https://jackaudio.org/) by [the JACK authors](https://github.com/jackaudio/jack2/blob/develop/AUTHORS.rst?plain=1)
-*   ASIO is a trademark and software of Steinberg Media Technologies GmbH
-
-
-We would also like to acknowledge the contributors listed in the
-[Github Contributors list](https://github.com/jamulussoftware/jamulus/graphs/contributors).
+Jamulus is the Jamulus project's name; this build is not made or endorsed by the Jamulus project.

@@ -255,7 +255,7 @@ Function Pass-Artifact-to-Job
         default         { "" }
     }
 
-    $artifact = "jamulus_${JamulusVersion}_win${ArtifactSuffix}.exe"
+    $artifact = "JacksJamRoom-Setup${ArtifactSuffix}.exe"
     echo "Copying artifact to .\deploy\${artifact}"
     move ".\deploy\Jamulus*installer-win.exe" ".\deploy\${artifact}"
     if ( !$? )

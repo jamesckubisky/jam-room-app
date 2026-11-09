@@ -1,0 +1,60 @@
+# Builds the Jack's Jam Room installer for Windows on every push to main, using Jamulus's own build scripts
+# (.github/autobuild/windows.ps1 and windows/deploy_windows.ps1). A tag such as v3.12.6-1 also publishes it as a
+# GitHub release, so the site can link to .../releases/latest/download/JacksJamRoom-Setup.exe.
+name: Build Windows installer
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  JAMULUS_BUILD_VERSION: 3.12.6
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Cache Windows dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            C:\Qt
+            C:\ChocoCache
+            C:\AutobuildCache
+            ${{ github.workspace }}\libs\NSIS\NSIS-source
+            ${{ github.workspace }}\libs\ASIOSDK2
+          key: windows-${{ hashFiles('.github/workflows/build-windows.yml', '.github/autobuild/windows.ps1', 'windows/deploy_windows.ps1') }}
+
+      - name: Set up build dependencies
+        run: powershell .\.github\autobuild\windows.ps1 -Stage setup
+
+      - name: Build app and installer
+        run: powershell .\.github\autobuild\windows.ps1 -Stage build
+
+      - name: Collect installer
+        id: get-artifacts
+        run: powershell .\.github\autobuild\windows.ps1 -Stage get-artifacts
+
+      - name: Upload installer to this run
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.get-artifacts.outputs.artifact_1 }}
+          path: deploy/${{ steps.get-artifacts.outputs.artifact_1 }}
+          retention-days: 31
+          if-no-files-found: error
+
+      - name: Publish release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" "deploy/${{ steps.get-artifacts.outputs.artifact_1 }}" --title "Jack's Jam Room ${{ github.ref_name }}" --notes "Jack's Jam Room for Windows, built on Jamulus ${{ env.JAMULUS_BUILD_VERSION }}. Source code is this repository."
