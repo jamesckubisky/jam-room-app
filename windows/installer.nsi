@@ -311,7 +311,7 @@ Section "Install_64Bit" INST_64
             goto removeold
 
         removeold: ; Remove it
-            ExecWait '"$PROGRAMFILES32\${APP_TITLE}\Uninstall.exe" /S' $0
+            ExecWait `"$PROGRAMFILES32\${APP_TITLE}\Uninstall.exe" /S` $0
             ${IfNot} $0 == 0
                 MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "$(OLD_VER_REMOVE_FAILED)" /sd IDCANCEL IDOK continueinstall
                 goto quit
