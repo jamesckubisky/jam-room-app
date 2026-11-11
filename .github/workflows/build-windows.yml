@@ -87,6 +87,28 @@ jobs:
           Write-Host "FlexASIO registered: $($k.CLSID) -> $dll"
           if (-not $dll -or -not (Test-Path $dll)) { throw 'the FlexASIO driver file is missing' }
 
+      # This build machine has no microphone and no speakers, which is exactly the PC that froze on November 11, 2026
+      # (the audio interface had been unplugged). Open the installed app and make sure it either shows something or
+      # closes by itself: it must never sit there "Not Responding".
+      - name: Open the app on a PC with no sound device (must not freeze)
+        shell: pwsh
+        run: |
+          $app = Get-ChildItem "$env:ProgramFiles" -Directory -Filter "Jack*" | ForEach-Object { Get-ChildItem $_.FullName -Filter JacksJamRoom.exe } | Select-Object -First 1
+          if (-not $app) { throw 'JacksJamRoom.exe was not installed' }
+          if (Get-ChildItem $app.DirectoryName -Filter Jamulus.exe) { throw 'the old program file name is still installed' }
+          Write-Host "sound inputs Windows lists:"; Get-CimInstance Win32_SoundDevice | ForEach-Object { Write-Host "  $($_.Name) [$($_.Status)]" }
+          $p = Start-Process -FilePath $app.FullName -PassThru
+          $frozen = 0
+          foreach ($i in 1..12) {
+            Start-Sleep -Seconds 5; $p.Refresh()
+            if ($p.HasExited) { Write-Host "after $($i*5)s: the app closed by itself, exit code $($p.ExitCode)"; break }
+            $wins = Get-Process -Id $p.Id -ErrorAction SilentlyContinue | Select-Object -ExpandProperty MainWindowTitle
+            Write-Host "after $($i*5)s: running, responding=$($p.Responding), window='$wins'"
+            if (-not $p.Responding) { $frozen++ } else { $frozen = 0 }
+          }
+          if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }
+          if ($frozen -ge 4) { throw 'the app stopped responding for 20 seconds with no sound device' }
+
       - name: Publish release (tags only)
         if: startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.release, 'v')
         env:

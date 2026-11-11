@@ -66,7 +66,9 @@
 !define APP_RUN           "RunAppAfterInstall"
 !define AUTORUN_NAME      "${APP_TITLE} Server"
 !define AUTORUN_KEY       "Software\Microsoft\Windows\CurrentVersion\Run"
-!define APP_EXE           "${APP_NAME}.exe"
+; Jack's Jam Room: the program file is installed under our own name. Releases up to 3.12.6-3 installed it as ${APP_NAME}.exe.
+!define APP_EXE           "JacksJamRoom.exe"
+!define APP_EXE_OLD       "${APP_NAME}.exe"
 !define UNINSTALL_EXE     "Uninstall.exe"
 !define APP_UNINSTALL_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APP_ID}"
 !define APP_URL           "https://jacksjamroom.com"
@@ -167,6 +169,15 @@ BrandingText "${APP_TITLE}. Built on Jamulus."
 !macro _AbortOnRunningApp
 
     nsProcess::_FindProcess "${APP_EXE}"
+    Pop $R0
+
+    ${If} $R0 = 0
+        MessageBox MB_OK|MB_ICONEXCLAMATION "$(RUNNING_APP_MSG)" /sd IDOK
+        Quit
+    ${EndIf}
+
+    ; an older release may still be running under the old file name
+    nsProcess::_FindProcess "${APP_EXE_OLD}"
     Pop $R0
 
     ${If} $R0 = 0
@@ -456,6 +467,7 @@ Section "Install_64Bit" INST_64
 
     ; Install the main application
     !insertmacro InstallApplication x86_64
+    Delete "$INSTDIR\${APP_EXE_OLD}" ; left by a release up to 3.12.6-3, if its uninstaller did not run
     !insertmacro SetupShortcuts
     !if ${BUILD_OPTION} != "jackonwindows"
         !insertmacro InstallBundledASIO
@@ -474,6 +486,7 @@ Section "Install_32Bit" INST_32
 
     ; Install the main application
     !insertmacro InstallApplication x86
+    Delete "$INSTDIR\${APP_EXE_OLD}" ; left by a release up to 3.12.6-3, if its uninstaller did not run
     !insertmacro SetupShortcuts
     !if ${BUILD_OPTION} != "jackonwindows"
         !insertmacro InstallBundledASIO

@@ -332,7 +332,8 @@ Function Build-App
         -Arguments ("--$BuildConfig", "--compiler-runtime", "--dir=$DeployPath\$BuildArch",
         "$BuildPath\$BuildConfig\$AppName.exe")
 
-    Move-Item -Path "$BuildPath\$BuildConfig\$AppName.exe" -Destination "$DeployPath\$BuildArch" -Force
+    # Jack's Jam Room: the installed program file carries our name, not the upstream one (2026-11-11).
+    Move-Item -Path "$BuildPath\$BuildConfig\$AppName.exe" -Destination "$DeployPath\$BuildArch\JacksJamRoom.exe" -Force
     Invoke-Native-Command -Command "nmake" -Arguments ("clean")
     Set-Location -Path $RootPath
 }
