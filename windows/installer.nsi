@@ -305,13 +305,52 @@ Var bRunApp
 ; Interface makers' own drivers (Focusrite and others) still work and stay an optional upgrade.
 !macro InstallBundledASIO
     InitPluginsDir
-    EnumRegKey $0 HKLM "SOFTWARE\ASIO" 0
-    ${If} $0 == ""
-        DetailPrint "No ASIO audio driver found: installing FlexASIO..."
+    ; A driver only counts if it really works: its key under SOFTWARE\ASIO names a CLSID whose DLL is still on disk.
+    ; (The app lists drivers the same way, so a key left behind by removed software must not stop us adding FlexASIO.)
+    StrCpy $R8 0
+    StrCpy $R9 ""
+    ${Do}
+        ClearErrors
+        EnumRegKey $0 HKLM "SOFTWARE\ASIO" $R8
+        ${If} $0 == ""
+            ${ExitDo}
+        ${EndIf}
+        ReadRegStr $1 HKLM "SOFTWARE\ASIO\$0" "CLSID"
+        ${If} $1 != ""
+            ReadRegStr $2 HKCR "CLSID\$1\InprocServer32" ""
+            ${If} $2 != ""
+            ${AndIf} ${FileExists} "$2"
+                StrCpy $R9 "$0"
+            ${EndIf}
+        ${EndIf}
+        ${If} $R9 != ""
+            ${ExitDo}
+        ${EndIf}
+        IntOp $R8 $R8 + 1
+        ${If} $R8 > 200
+            ${ExitDo}
+        ${EndIf}
+    ${Loop}
+    ${If} $R9 == ""
+        DetailPrint "No working ASIO audio driver found: installing FlexASIO..."
         SetOutPath "$PLUGINSDIR"
         File "${ROOT_PATH}\windows\flexasio\FlexASIO-1.10b.exe"
         ExecWait '"$PLUGINSDIR\FlexASIO-1.10b.exe" /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP-' $1
         DetailPrint "FlexASIO setup finished (code $1)"
+        ; If the quiet install did not register the driver, run its own setup window once so the person can click through.
+        ClearErrors
+        ReadRegStr $2 HKLM "SOFTWARE\ASIO\FlexASIO" "CLSID"
+        ${If} $2 == ""
+        ${AndIfNot} ${Silent}
+            DetailPrint "FlexASIO was not registered: opening its own setup..."
+            ExecWait '"$PLUGINSDIR\FlexASIO-1.10b.exe" /SP-' $1
+            DetailPrint "FlexASIO setup finished (code $1)"
+            ClearErrors
+            ReadRegStr $2 HKLM "SOFTWARE\ASIO\FlexASIO" "CLSID"
+            ${If} $2 == ""
+                MessageBox MB_OK|MB_ICONEXCLAMATION "Jack's Jam Room is installed, but the sound driver it needs could not be added on this PC.$\r$\n$\r$\nOpen jacksjamroom.com, go to Help, and follow Quick fixes for Windows sound, or install your audio interface's own driver." /SD IDOK
+            ${EndIf}
+        ${EndIf}
         IfFileExists "$PROFILE\FlexASIO.toml" +5 0
             FileOpen  $2 "$PROFILE\FlexASIO.toml" w
             FileWrite $2 `# Written by the Jack's Jam Room installer: use the Windows WASAPI backend for low delay.$\r$\n`

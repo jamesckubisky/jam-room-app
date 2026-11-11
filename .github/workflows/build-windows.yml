@@ -67,6 +67,26 @@ jobs:
           retention-days: 31
           if-no-files-found: error
 
+      # Install the fresh installer on this clean Windows machine and check that the app and a sound driver are really there.
+      # (On November 11, 2026 a real PC ended up with the app and no driver, so this is checked before anything is published.)
+      - name: Smoke test the installer (app installed, sound driver registered)
+        shell: pwsh
+        run: |
+          $exe = "deploy\${{ steps.get-artifacts.outputs.artifact_1 }}"
+          Write-Host "ASIO keys before:"; Get-ChildItem 'HKLM:\SOFTWARE\ASIO' -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName }
+          $p = Start-Process -FilePath $exe -ArgumentList '/S' -Wait -PassThru
+          Write-Host "installer exit code $($p.ExitCode)"
+          if ($p.ExitCode -ne 0) { throw "installer failed with code $($p.ExitCode)" }
+          $app = Get-ChildItem "$env:ProgramFiles" -Directory -Filter "Jack*" | ForEach-Object { Get-ChildItem $_.FullName -Filter *.exe } | Select-Object -First 5
+          $app | ForEach-Object { Write-Host "installed: $($_.FullName)" }
+          if (-not $app) { throw 'the app was not installed' }
+          Write-Host "ASIO keys after:"; Get-ChildItem 'HKLM:\SOFTWARE\ASIO' -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName }
+          $k = Get-ItemProperty 'HKLM:\SOFTWARE\ASIO\FlexASIO' -ErrorAction SilentlyContinue
+          if (-not $k -or -not $k.CLSID) { throw 'no FlexASIO sound driver registered after the install' }
+          $dll = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\CLSID\$($k.CLSID)\InprocServer32" -ErrorAction SilentlyContinue).'(default)'
+          Write-Host "FlexASIO registered: $($k.CLSID) -> $dll"
+          if (-not $dll -or -not (Test-Path $dll)) { throw 'the FlexASIO driver file is missing' }
+
       - name: Publish release (tags only)
         if: startsWith(github.ref, 'refs/tags/v') || startsWith(inputs.release, 'v')
         env:
