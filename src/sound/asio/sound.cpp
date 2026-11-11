@@ -187,6 +187,14 @@ QString CSound::CheckDeviceCapabilities()
     // check the number of available channels
     ASIOGetChannels ( &lNumInChan, &lNumOutChan );
 
+    // Jack's Jam Room: no input at all means no microphone or audio interface is plugged in (seen on a real PC,
+    // November 11, 2026). Say that in plain words instead of the channel-count message.
+    if ( lNumInChan < 1 )
+    {
+        return tr ( "No microphone or audio interface was found. Plug one in, check that Windows lists it under "
+                    "Settings, System, Sound, Input, then open the app again." );
+    }
+
     if ( ( lNumInChan < NUM_IN_OUT_CHANNELS ) || ( lNumOutChan < NUM_IN_OUT_CHANNELS ) )
     {
         // return error string

@@ -303,6 +303,33 @@ Var bRunApp
 ; FlexASIO (free, open source, MIT licence, github.com/dechamps/FlexASIO) silently, and set it to the Windows WASAPI
 ; backend (its documented low-delay shared mode) unless the person already has FlexASIO settings of their own.
 ; Interface makers' own drivers (Focusrite and others) still work and stay an optional upgrade.
+; Jack's Jam Room: the app cannot open without a microphone or audio interface. Windows lists working ones under
+; MMDevices\Audio\Capture with DeviceState 1. If there is none, ask the person to plug theirs in before going on.
+!macro CheckMicrophone
+    checkmic:
+    StrCpy $R6 0
+    StrCpy $R7 ""
+    ${Do}
+        ClearErrors
+        EnumRegKey $0 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Capture" $R6
+        ${If} $0 == ""
+            ${ExitDo}
+        ${EndIf}
+        ReadRegDWORD $1 HKLM "SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Capture\$0" "DeviceState"
+        ${If} $1 == 1
+            StrCpy $R7 "$0"
+            ${ExitDo}
+        ${EndIf}
+        IntOp $R6 $R6 + 1
+        ${If} $R6 > 300
+            ${ExitDo}
+        ${EndIf}
+    ${Loop}
+    ${If} $R7 == ""
+        MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "No microphone or audio interface was found on this PC.$\r$\n$\r$\nPlug yours in now, wait a few seconds, then click Retry.$\r$\n$\r$\nClick Cancel to carry on without one. Jack's Jam Room will not open until a microphone or audio interface is connected." /SD IDCANCEL IDRETRY checkmic
+    ${EndIf}
+!macroend
+
 !macro InstallBundledASIO
     InitPluginsDir
     ; A driver only counts if it really works: its key under SOFTWARE\ASIO names a CLSID whose DLL is still on disk.
@@ -423,6 +450,10 @@ Section "Install_64Bit" INST_64
 
     continueinstall:
 
+    !if ${BUILD_OPTION} != "jackonwindows"
+        !insertmacro CheckMicrophone
+    !endif
+
     ; Install the main application
     !insertmacro InstallApplication x86_64
     !insertmacro SetupShortcuts
@@ -436,6 +467,10 @@ Section "Install_64Bit" INST_64
 SectionEnd
 
 Section "Install_32Bit" INST_32
+
+    !if ${BUILD_OPTION} != "jackonwindows"
+        !insertmacro CheckMicrophone
+    !endif
 
     ; Install the main application
     !insertmacro InstallApplication x86
