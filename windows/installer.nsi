@@ -351,11 +351,21 @@ Var bRunApp
                 MessageBox MB_OK|MB_ICONEXCLAMATION "Jack's Jam Room is installed, but the sound driver it needs could not be added on this PC.$\r$\n$\r$\nOpen jacksjamroom.com, go to Help, and follow Quick fixes for Windows sound, or install your audio interface's own driver." /SD IDOK
             ${EndIf}
         ${EndIf}
-        IfFileExists "$PROFILE\FlexASIO.toml" +5 0
-            FileOpen  $2 "$PROFILE\FlexASIO.toml" w
-            FileWrite $2 `# Written by the Jack's Jam Room installer: use the Windows WASAPI backend for low delay.$\r$\n`
-            FileWrite $2 `backend = "Windows WASAPI"$\r$\n`
-            FileClose $2
+    ${EndIf}
+    ; FlexASIO settings, written whenever FlexASIO is on the PC and the person has no settings of their own.
+    ; The app needs 2 channels in and 2 out. A PC microphone is often 1 channel, and the app then stops with
+    ; "doesn't support 2 in/out channels" (seen on a real Windows 11 PC, November 11, 2026). Asking for 2 channels
+    ; makes Windows convert (FlexASIO's documented wasapiAutoConvert default in shared mode).
+    ClearErrors
+    ReadRegStr $2 HKLM "SOFTWARE\ASIO\FlexASIO" "CLSID"
+    ${If} $2 != ""
+    ${AndIfNot} ${FileExists} "$PROFILE\FlexASIO.toml"
+        FileOpen  $2 "$PROFILE\FlexASIO.toml" w
+        FileWrite $2 `# Written by the Jack's Jam Room installer.$\r$\n`
+        FileWrite $2 `backend = "Windows WASAPI"$\r$\n$\r$\n`
+        FileWrite $2 `[input]$\r$\nchannels = 2$\r$\n$\r$\n`
+        FileWrite $2 `[output]$\r$\nchannels = 2$\r$\n`
+        FileClose $2
     ${EndIf}
     SetOutPath "$INSTDIR"
     File "/oname=FlexASIO-LICENSE.txt" "${ROOT_PATH}\windows\flexasio\LICENSE.txt"
